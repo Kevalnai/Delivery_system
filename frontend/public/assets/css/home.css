@@ -1,0 +1,23 @@
+
+  body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+  }
+  .person {
+      margin-bottom: 20px;
+  }
+  .person img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 50%;
+  }
+  .person a {
+      text-decoration: none;
+      color: #1a0dab;
+  }
+  .fixed-img {
+    width: 100%;       /* Ensures it spans the card width */
+    height: 200px;     /* Fixed height for uniformity */
+    object-fit: cover; /* Crops the image to fill the container without distortion */
+  }

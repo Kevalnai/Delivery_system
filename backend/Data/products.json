@@ -1,0 +1,52 @@
+[
+    {
+        "image": "https://example.com/images/product1.jpg",
+        "title": "Wireless Headphones",
+        "category": "Electronics",
+        "condition": ["New", "Sealed"],
+        "description": "High-quality wireless headphones with noise cancellation.",
+        "price": 89.99,
+        "status": "Available",
+        "createdAt": "2023-03-06T12:00:00Z"
+    },
+    {
+        "image": "https://example.com/images/product2.jpg",
+        "title": "Smartphone Case",
+        "category": "Accessories",
+        "condition": ["New"],
+        "description": "Durable and stylish smartphone case compatible with iPhone 13.",
+        "price": 19.99,
+        "status": "Available",
+        "createdAt": "2023-03-06T12:00:00Z"
+    },
+    {
+        "image": "https://example.com/images/product3.jpg",
+        "title": "Gaming Mouse",
+        "category": "Computer Accessories",
+        "condition": ["Used", "Good"],
+        "description": "Ergonomic gaming mouse with customizable buttons.",
+        "price": 49.99,
+        "status": "Available",
+        "createdAt": "2023-03-06T12:00:00Z"
+    },
+    {
+        "image": "https://example.com/images/product4.jpg",
+        "title": "Bluetooth Speaker",
+        "category": "Electronics",
+        "condition": ["New"],
+        "description": "Portable Bluetooth speaker with rich sound and long battery life.",
+        "price": 39.99,
+        "status": "Available",
+        "createdAt": "2023-03-06T12:00:00Z"
+    },
+    {
+        "image": "https://example.com/images/product5.jpg",
+        "title": "Yoga Mat",
+        "category": "Fitness",
+        "condition": ["New"],
+        "description": "Non-slip yoga mat, perfect for all types of workouts.",
+        "price": 29.99,
+        "status": "Available",
+        "createdAt": "2023-03-06T12:00:00Z"
+    }
+    ]
