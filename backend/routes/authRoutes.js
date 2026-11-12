@@ -1,27 +1,15 @@
 // backend/routes/authRoutes.js
-const express = require('express');
-const authController = require('../controllers/authController');
-const { authenticateToken } = authController; // Import the authentication middleware
+// Old /auth/* URLs; they redirect to the main routes so there is one login flow.
+const express = require("express");
+const { authenticateToken } = require("../controllers/authController");
 
 const router = express.Router();
 
-// Register routes
-router.get('/register', (req, res) => {
-    res.render('register');  // Render register view
-});
+router.get("/register", (req, res) => res.redirect("/register"));
+router.get("/login", (req, res) => res.redirect("/login"));
 
-router.post('/register', authController.register);  // Use controller for registration
-
-// Login routes
-router.get('/login', (req, res) => {
-    res.render('login');  // Render login view
-});
-
-router.post('/login', authController.login);  // Use controller for login
-
-// Protected route example
-router.get('/protected', authenticateToken, (req, res) => {
-    res.send('This is a protected route');
+router.get("/protected", authenticateToken, (req, res) => {
+  res.send("This is a protected route");
 });
 
 module.exports = router;

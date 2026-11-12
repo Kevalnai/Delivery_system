@@ -1,4 +1,17 @@
 {
+  "name": "marketplace-delivery-system",
+  "version": "1.0.0",
+  "description": "Marketplace listings with buyer cart, checkout and delivery tracking",
+  "main": "backend/server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "seed": "node backend/config/seed.js",
+    "test": "mocha --exit \"backend/test/**/*.test.js\""
+  },
   "dependencies": {
     "bcrypt": "^5.1.1",
     "cloudinary": "^2.6.0",
@@ -7,7 +20,6 @@
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
-    "fs": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.12.1",
     "multer": "^1.4.5-lts.1",
@@ -18,9 +30,5 @@
     "mocha": "^11.1.0",
     "nodemon": "^3.1.9",
     "supertest": "^7.1.0"
-  },
-  "scripts": {
-    "test": "mocha backend/test/**/*.test.js"
-}
-
+  }
 }

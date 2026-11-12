@@ -4,13 +4,13 @@ const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
 const Product = require("../models/Product");
-const { uploadOnCloudinary } = require("../utils/cloudinary.js");
 
 
 // ✅ Configure Multer for Image Uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = path.join(__dirname, "../public/uploads");
+    fs.mkdirSync(uploadPath, { recursive: true });
     console.log("💾 Upload destination path:", uploadPath);
     cb(null, uploadPath);
   },
@@ -75,7 +75,7 @@ exports.postAddProduct = (req, res) => {
         category,
         description,
         price: parseFloat(price),
-        condition: Array.isArray(condition) ? condition : [condition],
+        condition: [].concat(condition || []).filter(Boolean),
         image: imagePath, // Store local file path
       });
 
@@ -123,9 +123,7 @@ exports.manageProducts = async (req, res) => {
     console.error('Error fetching products:', error);
     res.status(500).send('Server Error');
   }
-  return res.render("buyer/manage")
-  
-}
+};
 
 
 // Update Product Status

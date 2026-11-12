@@ -1,89 +1,76 @@
-require("dotenv").config();
-const express = require("express");
-const db = require("./config/db"); // MongoDB connection
 const path = require("path");
-const multer = require("multer");
+// Load backend/.env no matter which directory the server is started from.
+require("dotenv").config({ path: path.join(__dirname, ".env") });
+
+const express = require("express");
+const session = require("express-session");
+const cookieParser = require("cookie-parser");
+const connectDB = require("./config/db");
 const accessRoutes = require("./routes/accessRoutes");
-const Product = require("./models/Product"); // Import the Product model
-const authRoutes = require('./routes/authRoutes');
-const session = require('express-session');
-const cookieParser = require('cookie-parser');
-require('dotenv').config();
-
-
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
-// Debug: Show environment variables
-console.log("📌 MONGO_URI:", process.env.MONGO_URI || "❌ Not Found");
-console.log("📌 PORT:", process.env.PORT || 3005);
-
-// Ensure MongoDB URI is available
-if (!process.env.MONGO_URI) {
-  console.error("❌ MONGO_URI is missing in .env file. Exiting...");
-  process.exit(1);
+if (!process.env.SESSION_SECRET) {
+  console.warn("⚠️  SESSION_SECRET is not set in backend/.env; using an insecure development secret.");
 }
 
-// Set up the app to trust the first proxy (useful if behind Nginx, etc.)
 app.set("trust proxy", 1);
 
-// Middleware
+// Body parsing, cookies and sessions
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.set('view engine', 'ejs');
-app.set('views', './views');  // Set views directory
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); // Use cookie-parser middleware
-app.use(session({
-    secret: process.env.SESSION_SECRET,
+app.use(cookieParser());
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "dev-only-session-secret",
     resave: false,
     saveUninitialized: false,
-}));
-app.use(cookieParser()); // Use cookie-parser middleware
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-}));
+    cookie: { httpOnly: true, sameSite: "lax" },
+  })
+);
 
-// Multer File Upload Configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, "public/uploads");
-    console.log("📂 Upload Destination:", uploadPath);
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    const newFileName = Date.now() + path.extname(file.originalname);
-    console.log("📸 Uploaded File:", newFileName);
-    cb(null, newFileName);
-  },
-});
-
-const upload = multer({ storage });
-
-// Set EJS as the view engine
+// Views
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "../frontend/views"));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "public"))); // Serve static files
-app.use("/uploads", express.static(path.join(__dirname, "../backend/public/uploads")));
-console.log("🖼️ Serving static images from /uploads");
-
-// Use routes
-app.use("/", accessRoutes);
-app.use('/auth', authRoutes);
-
-
-// Connect to MongoDB
-db(); // MongoDB connection setup
-
-// Start the server
-const PORT = process.env.PORT || 3005;
-const HOST = process.env.HOST || "http://localhost";
-const serverUrl = `${HOST}:${PORT}`;
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at ${serverUrl}`);
+// Make the logged-in user available to every template
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  next();
 });
+
+// Static files
+//   /uploads/...           -> backend/public/uploads (product images)
+//   /js/..., /assets/...   -> frontend/public
+app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "../frontend/public")));
+
+// Routes
+app.use("/", accessRoutes);
+app.use("/auth", authRoutes);
+
+// 404
+app.use((req, res) => {
+  res.status(404).send("Page not found");
+});
+
+// Error handler (catches errors passed to next(err))
+app.use((err, req, res, next) => {
+  console.error("❌ Unhandled error:", err);
+  res.status(500).send("Server Error");
+});
+
+// Only connect and listen when run directly (not when required by tests)
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  const HOST = process.env.HOST || "http://localhost";
+
+  connectDB().then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running at ${HOST}:${PORT}`);
+    });
+  });
+}
+
+module.exports = app;

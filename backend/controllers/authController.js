@@ -1,70 +1,72 @@
 // backend/controllers/authController.js
-const User = require('../models/user');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+const User = require("../models/user");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-const JWT_SECRET = process.env.JWT_SECRET || 'qwertyAsDfGhJKl1z2x3c4v5b6n7m8$fdr@gdt';
-
-const sampleProducts = [
-    { id: 1, name: "Samsung Galaxy S21 Ultra", image: "/images/samsung.jpg", price: 999, description: "A flagship Android phone." },
-    { id: 2, name: "iPhone", image: "/images/phone2.jpg", price: 1099, description: "The latest iPhone with dynamic island design." },
-    { id: 3, name: "iPad 10th Gen (M2, 2022)", image: "/images/ipad.jpg", price: 1200, description: "Lightweight laptop powered by the M2 chip." },
-    { id: 4, name: "Truck", image: "/images/truck.jpg", price: 499, description: "Next-gen gaming console." },
-    { id: 5, name: "Bose Headphones", image: "/images/headphones.jpg", price: 299, description: "Noise-cancelling headphones." },
-    { id: 6, name: "Nothing Phone1", image: "/images/phone2.jpg", price: 399, description: "Stylish smartwatch with health monitoring." },
-    { id: 7, name: "Electric Bicycle", image: "/images/bicycle.jpg", price: 899, description: "Eco-friendly e-bike with pedal assist." },
-    { id: 8, name: "Logitech Headphones", image: "/images/headphone2.jpg", price: 99, description: "Ergonomic mouse with customizable buttons." }
-];
+const JWT_SECRET = process.env.JWT_SECRET || "dev-only-jwt-secret";
 
 // Registration logic
 exports.register = async (req, res) => {
-    try {
-        const { email, password, gender, age, profession } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
+  try {
+    const { email, password, gender, age, profession } = req.body;
 
-        const user = new User({
-            email,
-            password: hashedPassword,
-            gender,
-            age,
-            profession,
-        });
-
-        await user.save();
-        res.redirect('/auth/login');  // Redirect to login after registration
-    } catch (err) {
-        res.status(400).send('Error registering user: ' + err.message);
+    if (!email || !password) {
+      return res.status(400).render("register", { errorMessage: "Email and password are required" });
     }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).render("register", { errorMessage: "A user with this email already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await User.create({ email, password: hashedPassword, gender, age, profession });
+
+    res.redirect("/login");
+  } catch (err) {
+    console.error("❌ Registration error:", err);
+    res.status(400).render("register", { errorMessage: "Error registering user: " + err.message });
+  }
 };
 
 // Login logic
 exports.login = async (req, res) => {
+  try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    console.log('Email:', email);
-console.log('Password:', password);
-console.log(user.password);
+    const user = email ? await User.findOne({ email }) : null;
 
-    if (user && await bcrypt.compare(password, user.password)) {
-        // Generate JWT token
-        const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '1h' });
-        
-        // Set the token as a cookie
-        res.cookie('token', token, { httpOnly: true });
-        res.render('product-list', { products: sampleProducts });  // Redirect to homepage or dashboard
-    } else {
-        res.status(400).send('Invalid credentials');
+    if (!user || !(await bcrypt.compare(password || "", user.password))) {
+      return res.status(400).render("login", { errorMessage: "Invalid email or password." });
     }
+
+    // Session is what protected pages check
+    req.session.user = { id: user._id.toString(), email: user.email };
+
+    // JWT cookie kept for the /protected example route
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
+    res.cookie("token", token, { httpOnly: true, sameSite: "lax" });
+
+    res.redirect("/product-list");
+  } catch (err) {
+    console.error("❌ Login error:", err);
+    res.status(500).render("login", { errorMessage: "Server error, please try again." });
+  }
+};
+
+// Logout
+exports.logout = (req, res) => {
+  res.clearCookie("token");
+  req.session.destroy(() => res.redirect("/login"));
 };
 
 // Middleware to authenticate JWT
 exports.authenticateToken = (req, res, next) => {
-    const token = req.cookies.token;
-    if (!token) return res.sendStatus(401); // Unauthorized
+  const token = req.cookies.token;
+  if (!token) return res.sendStatus(401);
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) return res.sendStatus(403); // Forbidden
-        req.user = user;
-        next();
-    });
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
 };

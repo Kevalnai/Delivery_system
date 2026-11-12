@@ -1,58 +1,62 @@
-// seed.js
+// Seeds demo users and products. Safe to run more than once.
+//   npm run seed
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-require("dotenv").config(); // Ensure to load the .env file
 const connectDB = require("./db");
-const User = require("../models/user"); // Adjust path as needed
+const User = require("../models/user");
+const Product = require("../models/Product");
 
-// Seed data
-const seedData = async () => {
+const users = [
+  { email: "user1@example.com", password: "password1" },
+  { email: "user2@example.com", password: "password2" },
+  { email: "user3@example.com", password: "password3" },
+];
+
+// Images already exist in backend/public/uploads
+const products = [
+  { title: "Samsung Galaxy S21 Ultra", category: "electronics", price: 999, image: "uploads/samsung.jpg", condition: ["Used"], description: "A flagship Android phone." },
+  { title: "iPad 10th Gen", category: "electronics", price: 450, image: "uploads/ipad.jpg", condition: ["New"], description: "Lightweight tablet, great for notes and video." },
+  { title: "Bose Headphones", category: "electronics", price: 299, image: "uploads/headphones.jpg", condition: ["Refurbished"], description: "Noise-cancelling headphones." },
+  { title: "Electric Bicycle", category: "sports", price: 899, image: "uploads/bicycle.jpg", condition: ["Used"], description: "Eco-friendly e-bike with pedal assist." },
+  { title: "Smart TV", category: "home", price: 650, image: "uploads/TV.jpg", condition: ["New"], description: "55-inch 4K smart TV." },
+  { title: "Pickup Truck", category: "home", price: 15000, image: "uploads/truck.jpg", condition: ["Used"], description: "Reliable truck, well maintained." },
+];
+
+const seed = async () => {
   try {
-    // Connect to the database
     await connectDB();
 
-    // List of users to seed
-    const users = [
-      { email: "user1@example.com", password: "password1" },
-      { email: "user2@example.com", password: "password2" },
-      { email: "user3@example.com", password: "password3" },
-      { email: "user4@example.com", password: "password4" },
-      { email: "user5@example.com", password: "password5" },
-    ];
-
-    // Loop over each user and insert into the database
-    for (const userData of users) {
-      const { email, password } = userData;
-
-      // Check if the user already exists
-      const existingUser = await User.findOne({ email });
-      if (!existingUser) {
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create a new user
-        const newUser = new User({
-          email,
-          password: hashedPassword,
-          gender: "Not specified", // Default value
-          age: 25, // Default age
-          profession: "Not specified", // Default profession
-        });
-
-        // Save the user to the database
-        await newUser.save();
-        console.log(`User ${email} created successfully.`);
-      } else {
+    for (const { email, password } of users) {
+      if (await User.findOne({ email })) {
         console.log(`User ${email} already exists.`);
+        continue;
       }
+      await User.create({
+        email,
+        password: await bcrypt.hash(password, 10),
+        gender: "other",
+        age: 25,
+        profession: "Not specified",
+      });
+      console.log(`User ${email} created (password: ${password}).`);
     }
 
-    // Disconnect from the database
-    mongoose.connection.close();
+    for (const product of products) {
+      if (await Product.findOne({ title: product.title })) {
+        console.log(`Product "${product.title}" already exists.`);
+        continue;
+      }
+      await Product.create(product);
+      console.log(`Product "${product.title}" created.`);
+    }
   } catch (error) {
     console.error("Error seeding data:", error);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.connection.close();
   }
 };
 
-// Run the seed function
-seedData();
+seed();

@@ -1,20 +1,20 @@
+const path = require("path");
 const mongoose = require("mongoose");
-require("dotenv").config(); // Load environment variables
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
 const connectDB = async () => {
+  if (!process.env.MONGO_URI) {
+    console.error("❌ MONGO_URI is not set. Copy backend/.env.example to backend/.env and fill it in.");
+    process.exit(1);
+  }
+
   try {
     console.log("🔄 Connecting to MongoDB...");
-    console.log("MONGO_URI:", process.env.MONGO_URI); // Ensure correct URI is loaded
-
-    if (!process.env.MONGO_URI) {
-      throw new Error("❌ MONGO_URI is not set in .env file");
-    }
-
     const conn = await mongoose.connect(process.env.MONGO_URI);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    process.exit(1); // Exit on failure
+    process.exit(1);
   }
 };
 
